@@ -1,37 +1,19 @@
 <html>
 <head>
     <style>
-        
         td {
             border:2px solid black;
         }
     </style>
 </head>
+<script type="text/javascript" href="./js/botworld.js"></script>
 <body>
-<script>
-function createTable() {
-	var body = document.body;
-	var table = document.createElement("table");
-	var size = document.getElementsByName('size')[0].value;
-
-	for(var i = 0; i < size; i++) {
-		var tr = table.insertRow();
-		for(var j = 0; j < size; j++) {
-			var td = tr.insertCell();
-            var textbox = document.createElement("input");
-            textbox.setAttribute("type", "textbox");
-            textbox.setAttribute("name", i + "-" + j);
-            
-			td.appendChild(textbox);
-		}
-	}
-
-	body.appendChild(table);
-}
-</script>
-<label for="row-count">How many rows?</label>
-<input type="text" name="size" />
-
+<label for="row-count">Enter number of rows: </label>
+<input type="text" name="sizer" />
+<br/>
+<label for="row-count">Enter number of columns: </label>
+<input type="text" name="sizec" />
+<br/>
 <input type="submit" onclick="createTable();"/>
 </body>
 </html>
