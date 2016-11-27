@@ -5,7 +5,7 @@
 				background-color: black;
 				color: #BFAF80;
 				margin: 0 auto;
-				width: 99%;
+				width: 99vw;
 				font-family: Monospace;
 				/* Code for disabling highlighting taken from:
 					http://stackoverflow.com/questions/826782/how-to-disable-text-selection-highlighting-using-css */
@@ -13,63 +13,23 @@
 			  -webkit-user-select: none;   /* Chrome/Safari/Opera */
 			  -moz-user-select: none;      /* Firefox */
 			}
-			.rowlabel{
-				height: 5vh;
-				border-top-style: solid;
-				border-top-color: white;
-				border-top-width: 1px;
-				border-bottom-style: solid;
-				border-bottom-color: white;
-				border-bottom-width: 1px;
-			}
-			.columnlabel{
-				height: 5vh;
-				border-left-style: solid;
-				border-left-color: white;
-				border-left-width: 1px;
-				border-right-style: solid;
-				border-right-color: white;
-				border-right-width: 1px;
-			}
-			.cornerlabel{
-				height: 5vh;
-				border-top-style: solid;
-				border-top-color: white;
-				border-top-width: 1px;
-				border-right-style: solid;
-				border-right-color: white;
-				border-right-width: 1px;
-			}
 			.boardspace{
 				background-color: white;
 				color: #260126;
 				border-style: solid;
 				border-color: black;
 				border-width: 1px;
-				height: 5vh;
 			}
 			.boardspace:hover{
 				cursor: pointer;
 				background-color: #BFAF80;
 			}
-			.button{
-				background-color: #BFAF80;
-				color: #260126;
-				border-style: solid;
-				border-color: black;
-				border-width: 5px;
-				padding: 10px 5px;
-				text-decoration: none;
-			}
-			.button:hover{
-				background-color: #70674B;
-				cursor: pointer;
-			}
-			.button:active{
-				background-color: black;
-			}
 			.playerSelect{
 				width: 60%;
+			}
+			.InfoPanel{
+				text-align: left;
+				margin-bottom: 3vh;
 			}
 		</style>
 </head>
@@ -84,13 +44,11 @@
 		<br/>
 		<input type="submit" onclick="validateInput();"/>
 	</div>
-	<div id="Gameboard" style="width:100%; padding-top: 5vh">
-		<div id="LeftPanel" style="width:20%; float: left;">
+	<div id="Gameboard" style="width:100%; padding-top: 5vh; overflow-x: auto;">
+		<div id="TopInfoPanel" class="InfoPanel"></div>
+		<div id="Board" style="width:100%; float: left; text-align: center; padding-bottom: 5vh">
 		</div>
-		<div id="Board" style="width:60%; float: left; text-align: center; padding-bottom: 5vh">
-		</div>
-		<div id="RightPanel" style="width:20%; float: left">
-		</div>
+		<div id="BottomInfoPanel" class="InfoPanel"></div>
 	</div>
 	</body>
 </html>
