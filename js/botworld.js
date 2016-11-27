@@ -15,6 +15,8 @@ function boardObject(){
 	}
 	this.startingTile = [0,0];
 	this.endingTile = [1,1];
+	this.rows = 2;
+	this.cols = 2;
 }
 
 function boardSpace(id, row, col){
@@ -24,6 +26,7 @@ function boardSpace(id, row, col){
 	this.row = row;
 	this.col = col;
 	this.probability = 1;
+	this.utility = 0;
 }
 
 //OBJECTS*********************************************************************
@@ -77,8 +80,32 @@ function updateProbability(row, col){
 }
 
 function policy(){
-	
-	addRunButton();
+	var gamma = parseFloat(document.getElementsByName("gamma")[0].value);
+	if(isNaN(gamma) || gamma < 0 || gamma > 1){
+		alert("Gamma must be a number between 0 and 1");
+	} else {
+		var threshold = parseFloat(document.getElementsByName("threshold")[0].value);
+		if(isNaN(threshold) || threshold < 0){
+			alert("Threshold must be a positive number");
+		} else {
+			board.gamma = gamma;
+			board.threshold = threshold;
+			valueIteration();
+			addRunButton();
+		}
+	}
+}
+
+function valueIteration(){
+	util = startingUtilities();
+	util2 = deepCopy(util);
+	delta = 0;
+	do{
+		for(var i = 0; i < util.length; i++){
+			//TODO: finish value iteration
+		}
+	} while(delta >= (board.threshold*(1-board.gamma))/board.gamma);
+	setUtilities(util2);
 }
 
 function run(){
@@ -90,6 +117,8 @@ function run(){
 //This function creates a matrix of appropriate size to use for internal model of game
 //also modifies HTML to create divs for gameboard on screen
 function generateBoard(rows, cols){
+	board.rows = rows;
+	board.cols = cols;
 	var boardElement = document.getElementById("Board");
 	var size = 90/(cols);
 	size = Math.min(size, 4);
@@ -136,7 +165,10 @@ function displayUpdateProbability(row, col){
 function makeStartingTile(row, col){
 	if(board.endingTile[0] == row && board.endingTile[1] == col){
 		alert("Starting and ending tiles must be different!");
-	} else {
+	} else if(!(board.getElement(row,col).accessible)){
+		alert("Staring tile must be accessible");
+	}
+	else {
 		//delete old START signifier
 		document.getElementById(board.startingTile[0]+":"+board.startingTile[1]+"status").innerHTML="";
 
@@ -152,7 +184,10 @@ function makeStartingTile(row, col){
 function makeEndingTile(row, col){
 	if(board.startingTile[0] == row && board.startingTile[1] == col){
 		alert("Starting and ending tiles must be different!");
-	} else {
+	} else if(!(board.getElement(row,col).accessible)){
+		alert("Ending tile must be accessible");
+	} 
+	else {
 		//delete old START signifier
 		document.getElementById(board.endingTile[0]+":"+board.endingTile[1]+"status").innerHTML="";
 
@@ -202,7 +237,7 @@ function displayOptions(el){
 }
 
 function addPolicyButton(){
-	var str = "<button onclick='policy()'>Find Policy</button>";
+	var str = "Gamma:<input type='text' name='gamma'/>Threshold:<input type='text' name='threshold'/><button onclick='policy()'>Find Policy</button>";
 	document.getElementById("TopInfoPanel").innerHTML = str;
 }
 
@@ -211,3 +246,36 @@ function addRunButton(){
 }
 
 //HTML MODIFIERS*********************************************************************
+
+//MDP HELPER FUNCTIONS*********************************************************************
+
+function setUtilities(vec){
+	var place = 0;
+	for(var i = 0; i < board.rows; i++){
+		for(var j = 0; j < board.cols; j++){
+			var ele = board.getElement(i,j);
+			if(ele.accessible){
+				ele.utility = vec[place++];
+			}
+		}
+	}
+}
+
+function startingUtilities(){
+	util = [];
+	for(var i = 0; i < board.rows; i++){
+		for(var j = 0; j < board.cols; j++){
+			if(board.getElement(i,j).accessible){
+				util.push(0);
+			}
+		}
+	}
+}
+
+function deepCopy(vec, newvec){
+	for(var i = 0; i < vec.length; i++){
+		newvec.push(vec[i]);
+	}
+}
+
+//MDP HELPER FUNCTIONS*********************************************************************
