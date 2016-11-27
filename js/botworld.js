@@ -117,8 +117,6 @@ function run(){
 //This function creates a matrix of appropriate size to use for internal model of game
 //also modifies HTML to create divs for gameboard on screen
 function generateBoard(rows, cols){
-	board.rows = rows;
-	board.cols = cols;
 	var boardElement = document.getElementById("Board");
 	var size = 90/(cols);
 	size = Math.min(size, 4);
@@ -126,6 +124,8 @@ function generateBoard(rows, cols){
 	document.getElementById("TopInfoPanel").style["padding-left"] = padding + "vw";
 	document.getElementById("BottomInfoPanel").style["padding-left"] = padding + "vw";
 	board = new boardObject();
+	board.rows = rows;
+	board.cols = cols;
 	var counter = 1;
 	for(var i = 0; i < rows; i++){
 		var row = [];
@@ -237,7 +237,8 @@ function displayOptions(el){
 }
 
 function addPolicyButton(){
-	var str = "Gamma:<input type='text' name='gamma'/>Threshold:<input type='text' name='threshold'/><button onclick='policy()'>Find Policy</button>";
+	var str = "Gamma:<input type='text' name='gamma' size=4/>Threshold:<input type='text' name='threshold' size=4/>"
+	+"<button onclick='policy()'>Find Policy</button>";
 	document.getElementById("TopInfoPanel").innerHTML = str;
 }
 
