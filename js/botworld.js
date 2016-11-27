@@ -19,10 +19,11 @@ function boardObject(){
 
 function boardSpace(id, row, col){
 	this.accessible = true;
-	this.value = 0;
+	this.score = 0;
 	this.id = id;
 	this.row = row;
 	this.col = col;
+	this.probability = 1;
 }
 
 //OBJECTS*********************************************************************
@@ -64,6 +65,17 @@ function updateScore(row, col){
 	} 
 }
 
+function updateProbability(row, col){
+	var probability = parseFloat(document.getElementsByName('probability')[0].value);
+	if(isNaN(probability)){
+		alert("Invalid number format for score");
+	} else{
+		board.getElement(row,col).probability = probability;
+		document.getElementById(row+":"+col+"probability").innerHTML = probability;
+		document.getElementById("BottomInfoPanel").innerHTML = "";
+	} 
+}
+
 function policy(){
 	
 	addRunButton();
@@ -80,7 +92,7 @@ function run(){
 function generateBoard(rows, cols){
 	var boardElement = document.getElementById("Board");
 	var size = 90/(cols);
-	size = Math.min(size, 5);
+	size = Math.min(size, 4);
 	var padding = (90 - size*cols)/2;
 	document.getElementById("TopInfoPanel").style["padding-left"] = padding + "vw";
 	document.getElementById("BottomInfoPanel").style["padding-left"] = padding + "vw";
@@ -95,15 +107,14 @@ function generateBoard(rows, cols){
 			row.push(new boardSpace(counter++, i, j));
 			rowElement.innerHTML = rowElement.innerHTML + "<div id='"+i+":"+j
 				+"' class='boardspace' onclick='boardClick(this)' style='width: "
-				+size+"vw; height: "+size+"vw; float: left'><span id='"+i+":"+j+"status"+"'>"
-				+"</span><br><span id='"+i+":"+j+"score'>0</span></div>";
+				+size+"vw; min-height: "+size+"vw; float: left'><span id='"+i+":"+j+"status"+"'>"
+				+"</span><br><span id='"+i+":"+j+"score'>0</span>/<span id='"+i+":"+j+"probability'>1</span></div>";
 		}
 		board.addRow(row);
 	}
 	document.getElementById("0:0status").innerHTML = "START";
 	document.getElementById("1:1status").innerHTML = "END";
-	var str = "<button onclick='policy()'>Find Policy</button>";
-	document.getElementById("TopInfoPanel").innerHTML = str;
+	addPolicyButton();
 }
 
 function displayUpdateScore(row, col){
@@ -111,8 +122,15 @@ function displayUpdateScore(row, col){
 	var str = "Update score for tile ("+row+","+col+"): <input name='score' type='text'/>"
 	 +"<br/><input type='submit' value='Update' onclick='updateScore("+row+","+col+");'/>";
 	infoSpace.innerHTML = str;
-	str = "<button onclick='policy()'>Find Policy</button>";
-	document.getElementById("TopInfoPanel").innerHTML = str;
+	addPolicyButton();
+}
+
+function displayUpdateProbability(row, col){
+	var infoSpace = document.getElementById("BottomInfoPanel");
+	var str = "Update probability of successful movement when on tile ("+row+","+col+"): <input name='probability' type='text'/>"
+	 +"<br/><input type='submit' value='Update' onclick='updateProbability("+row+","+col+");'/>";
+	infoSpace.innerHTML = str;
+	addPolicyButton();
 }
 
 function makeStartingTile(row, col){
@@ -128,8 +146,7 @@ function makeStartingTile(row, col){
 
 		document.getElementById("BottomInfoPanel").innerHTML = "";
 	}
-	str = "<button onclick='policy()'>Find Policy</button>";
-	document.getElementById("TopInfoPanel").innerHTML = str;
+	addPolicyButton();
 }
 
 function makeEndingTile(row, col){
@@ -145,16 +162,48 @@ function makeEndingTile(row, col){
 
 		document.getElementById("BottomInfoPanel").innerHTML = "";
 	}
-	str = "<button onclick='policy()'>Find Policy</button>";
-	document.getElementById("TopInfoPanel").innerHTML = str;
+	addPolicyButton();
+}
+
+function makeAccessible(row, col){
+	var elem = board.getElement(row,col);
+	if(!elem.accessible){
+		elem.accessible = true;
+		document.getElementById(row+":"+col).style["background-color"] = "white";
+		addPolicyButton();
+	}
+	document.getElementById("BottomInfoPanel").innerHTML = "";
+}
+
+function makeInaccessible(row, col){
+	if((board.startingTile[0] == row && board.startingTile[1] == col)
+		|| (board.endingTile[0] == row && board.endingTile[1] == col)){
+		alert("Cannot make starting/ending tile inaccessible");
+	} else {
+		var elem = board.getElement(row, col);
+		if(elem.accessible){
+			elem.accessible = false;
+			document.getElementById(row+":"+col).style["background-color"] = "black";
+			addPolicyButton();
+		}
+		document.getElementById("BottomInfoPanel").innerHTML = "";
+	}
 }
 
 function displayOptions(el){
 	var infoSpace = document.getElementById("BottomInfoPanel");
 	var str="Tile ("+el.row+","+el.col+")<br/><button onclick='displayUpdateScore("+el.row+","+el.col+")'>Update Score</button>"
+	+"<br/><button onclick='displayUpdateProbability("+el.row+","+el.col+")'>Update Prob. of Successful Move</button>"
 	+"<br/><button onclick='makeStartingTile("+el.row+","+el.col+")'>Make Starting Tile</button>"
-	+"<br/><button onclick='makeEndingTile("+el.row+","+el.col+")'>Make Ending Tile</button>";
+	+"<br/><button onclick='makeEndingTile("+el.row+","+el.col+")'>Make Ending Tile</button>"
+	+"<br/><button onclick='makeAccessible("+el.row+","+el.col+")'>Make Accessible</button>"
+	+"<br/><button onclick='makeInaccessible("+el.row+","+el.col+")'>Make Inaccessible</button>";
 	infoSpace.innerHTML = str;
+}
+
+function addPolicyButton(){
+	var str = "<button onclick='policy()'>Find Policy</button>";
+	document.getElementById("TopInfoPanel").innerHTML = str;
 }
 
 function addRunButton(){
