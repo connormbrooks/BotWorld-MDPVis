@@ -34,7 +34,7 @@ function boardObject(){
 		return s;
 	}
 	this.startingTile = [0,0];
-	this.endingTile = [1,1];
+	this.endingTiles = [[1,1]];
 	this.rows = 2;
 	this.cols = 2;
 	this.gamma = 0.1;
@@ -49,6 +49,7 @@ function boardSpace(id, row, col){
 	this.col = col;
 	this.probability = 1;
 	this.utility = 0;
+	this.endingTile = false;
 }
 
 //OBJECTS*********************************************************************
@@ -193,6 +194,7 @@ function generateBoard(rows, cols){
 	}
 	document.getElementById("0:0status").innerHTML = "START";
 	document.getElementById("1:1status").innerHTML = "END";
+	board.getElement(1,1).endingTile = true;
 	addPolicyButton();
 }
 
@@ -213,10 +215,10 @@ function displayUpdateProbability(row, col){
 }
 
 function makeStartingTile(row, col){
-	if(board.endingTile[0] == row && board.endingTile[1] == col){
-		alert("Starting and ending tiles must be different!");
+	if(board.getElement(row,col).endingTile){
+		alert("Starting tile cannot be an ending tile!");
 	} else if(!(board.getElement(row,col).accessible)){
-		alert("Staring tile must be accessible");
+		alert("Starting tile must be accessible");
 	}
 	else {
 		//delete old START signifier
@@ -231,23 +233,31 @@ function makeStartingTile(row, col){
 	addPolicyButton();
 }
 
-function makeEndingTile(row, col){
+function toggleEndingTile(row, col){
 	if(board.startingTile[0] == row && board.startingTile[1] == col){
-		alert("Starting and ending tiles must be different!");
+		alert("Starting tile cannot be an ending tile!");
 	} else if(!(board.getElement(row,col).accessible)){
 		alert("Ending tile must be accessible");
 	} 
 	else {
-		//delete old START signifier
-		document.getElementById(board.endingTile[0]+":"+board.endingTile[1]+"status").innerHTML="";
-
-		board.endingTile[0] = row;
-		board.endingTile[1] = col;
-		document.getElementById(row+":"+col+"status").innerHTML = "END";
+		if(!board.getElement(row,col).endingTile){
+			board.endingTiles.push([row,col]);
+			document.getElementById(row+":"+col+"status").innerHTML = "END";
+			board.getElement(row,col).endingTile = true;
+		} else{
+			if(board.endingTiles.length == 1){
+				alert("Must have at least one ending tile");
+			} else {
+				board.endingTiles.splice(board.endingTiles.indexOf([row,col]),1);
+				document.getElementById(row+":"+col+"status").innerHTML = "";
+				board.getElement(row,col).endingTile = false;
+			}
+		}
 
 		document.getElementById("BottomInfoPanel").innerHTML = "";
 	}
 	addPolicyButton();
+	console.log(board.endingTiles);
 }
 
 function makeAccessible(row, col){
@@ -284,7 +294,7 @@ function displayOptions(el){
 	var str="Tile ("+el.row+","+el.col+")<br/><button onclick='displayUpdateScore("+el.row+","+el.col+")'>Update Score</button>"
 	+"<br/><button onclick='displayUpdateProbability("+el.row+","+el.col+")'>Update Prob. of Successful Move</button>"
 	+"<br/><button onclick='makeStartingTile("+el.row+","+el.col+")'>Make Starting Tile</button>"
-	+"<br/><button onclick='makeEndingTile("+el.row+","+el.col+")'>Make Ending Tile</button>"
+	+"<br/><button onclick='toggleEndingTile("+el.row+","+el.col+")'>Toggle Ending Tile</button>"
 	+"<br/><button onclick='makeAccessible("+el.row+","+el.col+")'>Make Accessible</button>"
 	+"<br/><button onclick='makeInaccessible("+el.row+","+el.col+")'>Make Inaccessible</button>";
 	infoSpace.innerHTML = str;
