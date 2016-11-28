@@ -38,13 +38,14 @@
 </head>
 <script type="text/javascript" src="./js/botworld.js"></script>
 <body>
-	<div id="InfoInput" style="text-align: center;">
+	<div id="InfoInput" style="text-align: center; margin: 3vh;">
 		<label for="row-count">Enter number of rows: </label>
 		<input type="text" name="size" />
 		<br/>
 		<label for="row-count">Enter number of columns: </label>
 		<input type="text" name="size" />
 		<br/>
+		<button onclick="drawInstructions()">Instructions</button>
 		<input type="submit" onclick="validateInput();"/>
 	</div>
 	<div id="Gameboard" style="width:100%; padding-top: 5vh; overflow-x: auto;">

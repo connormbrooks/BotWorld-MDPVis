@@ -226,7 +226,7 @@ function validateInput(){
 		alert("Min number of rows/cols = 2");
 	}
 	else {
-		document.getElementById("InfoInput").innerHTML = "";
+		document.getElementById("InfoInput").innerHTML = "<button onclick='restart()'>Restart</button>";
 		generateBoard(rows, cols);
 	}
 }
@@ -258,6 +258,8 @@ function updateProbability(row, col){
 
 function generateBoard(rows, cols){
 	var boardElement = document.getElementById("Board");
+	boardElement.innerHTML = "";
+	boardElement.style["font-size"] = "7pt;"
 	var size = 90/(cols);
 	size = Math.min(size, 4);
 	var padding = (90 - size*cols)/2;
@@ -392,8 +394,8 @@ function displayOptions(el){
 }
 
 function addPolicyButton(){
-	var str = "Gamma:<input type='text' name='gamma' size=4/>Threshold:<input type='text' name='threshold' size=4/>"
-	+"<button onclick='policy()'>Find Policy</button>";
+	var str = "Gamma:<input type='text' name='gamma' size=4/><br>Threshold:<input type='text' name='threshold' size=4/>"
+	+"<br><button onclick='policy()'>Find Policy</button>";
 	document.getElementById("TopInfoPanel").innerHTML = str;
 }
 
@@ -407,6 +409,36 @@ function addRunButton(c){
 
 function drawStopRun(){
 	document.getElementById("TopInfoPanel").innerHTML = "<button onclick='stopRun()'>Stop Run</button>"
+}
+
+function restart(){
+	location.reload();
+}
+
+function drawInstructions(){
+	document.getElementById("Board").style["font-size"] = "10pt";
+	var str = "Instructions:<br>>Select rows and columns to determine size of world"
+	+"<br>>Each tile in the world can be a starting tile, an ending tile, or neither"
+	+"<br>  >There must be at least one ending tile, but there can be as many as desired"
+	+"<br>  >The starting tile cannot be an ending tile"
+
+	+"<br><br>>Each tile can be made inaccessible, resulting in it acting the same as an out of bounds tile"
+	+"<br>  >Starting and ending tiles cannot be made inaccessible"
+
+	+"<br><br>>Each tile in the world has a score and a probability of success<br>"
+	+"  >The score is the reward gained each time the agent enters that state<br>"
+	+"  >The probability of success is the prob. that the agent moves as attempted when in that state<br>"
+	+"    >If the agent's move does not success, the agent is equally likely to move in either of the adjacent directions"
+	+"<br>     >I.e. if the agent tries to move RIGHT but fails, it will either move UP or DOWN with equal probability"
+	+"<br>  >The score and probability of success for a tile are shown on the tile in the format 'score/probability'"
+
+	+"<br><br>>Each tile has a utility, which is assumed to be 0 before being calculated"
+	+"<br>  >The utility is drawn below the score/probability, and is updated after value iteration is run"
+
+	+"<br><br>>Once value iteration has been run, a policy is determined for each tile"
+	+"<br>  >The policy at a tile is shown on a tile with the corresponding letter(s) of the directions of intended movement"
+	+"<br>    >I.e. if the policy at tile A is move either left or right, 'L/R' will be displayed on the tile (in random order)";
+	document.getElementById("Board").innerHTML = str;
 }
 
 //HTML MODIFIERS*********************************************************************
