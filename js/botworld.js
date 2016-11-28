@@ -1,6 +1,9 @@
 //universally accessible board object
 var board;
 
+//flag for interrupting running processes
+var HALT = false;
+
 
 //OBJECTS*********************************************************************
 
@@ -139,6 +142,8 @@ function setPolicy(util){
 
 function run(){
 	setCurrentState(board.startingTile,null);
+	HALT = false;
+	drawStopRun();
 	setTimeout(function(){
 		getNextState(board.startingTile, 0);
 	}, 100);
@@ -147,7 +152,8 @@ function run(){
 function getNextState(tile, score){
 	var el = board.getElement(tile[0], tile[1]);
 	score += el.score;
-	if(el.endingTile){
+	if(el.endingTile || HALT){
+		HALT = false;
 		endRun(tile, score);
 		return;
 	}
@@ -179,6 +185,11 @@ function getNextState(tile, score){
 	setTimeout(function(){
 		getNextState(newTile, score);
 	}, 100);
+}
+
+function stopRun(){
+	//flip halting flag
+	HALT = true;
 }
 
 //MAIN FUNCTIONS*********************************************************************
@@ -394,7 +405,13 @@ function addRunButton(c){
 	document.getElementById("TopInfoPanel").innerHTML = "Utility convergence after: "+c+" iterations<br/><button onclick='run()'>Run</button>";
 }
 
+function drawStopRun(){
+	document.getElementById("TopInfoPanel").innerHTML = "<button onclick='stopRun()'>Stop Run</button>"
+}
+
 //HTML MODIFIERS*********************************************************************
+
+
 
 //MDP HELPER FUNCTIONS*********************************************************************
 
