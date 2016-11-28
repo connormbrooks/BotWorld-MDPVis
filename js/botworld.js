@@ -125,9 +125,9 @@ function setPolicy(util){
 		//mix up moves to make it random which one is chosen as best when there are equal utilities
 		moves = shuffleArr(moves, 10);
 		var bestMove = moves[0][0];
-		var bestScore = qScoreAction(state, moves[0], util);
+		var bestScore = scoreAction(state, moves[0], util);
 		for(var j = 1; j < moves.length; j++){
-			var newScore = qScoreAction(state, moves[j], util);
+			var newScore = scoreAction(state, moves[j], util);
 			if(newScore > bestScore){
 				bestMove = moves[j][0];
 				bestScore = newScore;
@@ -259,7 +259,6 @@ function updateProbability(row, col){
 function generateBoard(rows, cols){
 	var boardElement = document.getElementById("Board");
 	boardElement.innerHTML = "";
-	boardElement.style["font-size"] = "7pt;"
 	var size = 90/(cols);
 	size = Math.min(size, 4);
 	var padding = (90 - size*cols)/2;
@@ -416,28 +415,27 @@ function restart(){
 }
 
 function drawInstructions(){
-	document.getElementById("Board").style["font-size"] = "10pt";
-	var str = "Instructions:<br>>Select rows and columns to determine size of world"
-	+"<br>>Each tile in the world can be a starting tile, an ending tile, or neither"
-	+"<br>  >There must be at least one ending tile, but there can be as many as desired"
-	+"<br>  >The starting tile cannot be an ending tile"
+	var str = "<div style='text-align: left; font-size: 10pt; margin-left: 10vw;'>Instructions:<br>&gt;Select rows and columns to determine size of world"
+	+"<br>&gt;Each tile in the world can be a starting tile, an ending tile, or neither"
+	+"<br>&nbsp;&nbsp;&gt;There must be at least one ending tile, but there can be as many as desired"
+	+"<br>&nbsp;&nbsp;&gt;The starting tile cannot be an ending tile"
 
-	+"<br><br>>Each tile can be made inaccessible, resulting in it acting the same as an out of bounds tile"
-	+"<br>  >Starting and ending tiles cannot be made inaccessible"
+	+"<br><br>&gt;Each tile can be made inaccessible, resulting in it acting the same as an out of bounds tile"
+	+"<br>&nbsp;&nbsp;&gt;Starting and ending tiles cannot be made inaccessible"
 
-	+"<br><br>>Each tile in the world has a score and a probability of success<br>"
-	+"  >The score is the reward gained each time the agent enters that state<br>"
-	+"  >The probability of success is the prob. that the agent moves as attempted when in that state<br>"
-	+"    >If the agent's move does not success, the agent is equally likely to move in either of the adjacent directions"
-	+"<br>     >I.e. if the agent tries to move RIGHT but fails, it will either move UP or DOWN with equal probability"
-	+"<br>  >The score and probability of success for a tile are shown on the tile in the format 'score/probability'"
+	+"<br><br>&gt;Each tile in the world has a score and a probability of success<br>"
+	+"&nbsp;&nbsp;&gt;The score is the reward gained each time the agent enters that state<br>"
+	+"&nbsp;&nbsp;&gt;The probability of success is the prob. that the agent moves as attempted when in that state<br>"
+	+"&nbsp;&nbsp;&nbsp;&nbsp;&gt;If the agent's move does not success, the agent is equally likely to move in either of the adjacent directions"
+	+"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;I.e. if the agent tries to move RIGHT but fails, it will either move UP or DOWN with equal probability"
+	+"<br>&nbsp;&nbsp;&gt;The score and probability of success for a tile are shown on the tile in the format 'score/probability'"
 
-	+"<br><br>>Each tile has a utility, which is assumed to be 0 before being calculated"
-	+"<br>  >The utility is drawn below the score/probability, and is updated after value iteration is run"
+	+"<br><br>&gt;Each tile has a utility, which is assumed to be 0 before being calculated"
+	+"<br>&nbsp;&nbsp;&gt;The utility is drawn below the score/probability, and is updated after value iteration is run"
 
-	+"<br><br>>Once value iteration has been run, a policy is determined for each tile"
-	+"<br>  >The policy at a tile is shown on a tile with the corresponding letter(s) of the directions of intended movement"
-	+"<br>    >I.e. if the policy at tile A is move either left or right, 'L/R' will be displayed on the tile (in random order)";
+	+"<br><br>&gt;Once value iteration has been run, a policy is determined for each tile"
+	+"<br>&nbsp;&nbsp;&gt;The policy at a tile is shown on a tile with the corresponding letter(s) of the directions of intended movement"
+	+"<br>&nbsp;&nbsp;&nbsp;&nbsp;&gt;I.e. if the policy at tile A is move either left or right, 'L/R' will be displayed on the tile (in random order)</div>";
 	document.getElementById("Board").innerHTML = str;
 }
 
@@ -501,37 +499,6 @@ function scoreAction(state, action, util){
 	var scoreSum = probSuccess*util[""+resultingState(state, actionMove[0]).id];
 	for(var i = 1; i < actionMove.length; i++){
 		scoreSum += probOther*util[""+resultingState(state, actionMove[i]).id];
-	}
-	return scoreSum;
-}
-
-function qScoreAction(state, action, util){
-	//first check if this is an ending tile
-	if(state.endingTile){
-		return 0;
-	}
-
-	//sum up four possible results from an action (intended action + 3 unintended actions)
-	var actionMove;
-	if(action == "UP"){
-		actionMove = [[-1, 0], [0, 1], [0, -1]];
-	} else if (action == "RIGHT"){
-		actionMove = [[0, 1], [-1, 0], [1, 0]];
-	} else if (action == "DOWN"){
-		actionMove = [[1, 0], [0, 1], [0, -1]];
-	} else if (action == "LEFT"){
-		actionMove = [[0, -1], [-1, 0], [1, 0]];
-	} else {
-		console.log("Invalid action");
-		return 0;
-	}
-	var probSuccess = state.probability;
-	var probOther = (1 - probSuccess) / 2.0;
-	var newState = resultingState(state, actionMove[0]);
-	var scoreSum = probSuccess*(newState.score+board.gamma*util[""+newState.id]);
-	for(var i = 1; i < actionMove.length; i++){
-		newState = resultingState(state, actionMove[i]);
-		scoreSum += probOther*(newState.score+board.gamma*util[""+newState.id]);
 	}
 	return scoreSum;
 }
