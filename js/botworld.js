@@ -318,19 +318,19 @@ function scoreAction(state, action, util){
 	//sum up four possible results from an action (intended action + 3 unintended actions)
 	var actionMove;
 	if(action == "UP"){
-		actionMove = [[-1, 0],[0, 1],[1, 0], [0, -1]];
+		actionMove = [[-1, 0], [0, 1], [0, -1]];
 	} else if (action == "RIGHT"){
-		actionMove = [[0, 1], [-1, 0], [1, 0], [0, -1]];
+		actionMove = [[0, 1], [-1, 0], [1, 0]];
 	} else if (action == "DOWN"){
-		actionMove = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+		actionMove = [[1, 0], [0, 1], [0, -1]];
 	} else if (action == "LEFT"){
-		actionMove = [[0, -1], [-1, 0], [0, 1], [1, 0]];
+		actionMove = [[0, -1], [-1, 0], [1, 0]];
 	} else {
 		console.log("Invalid action");
 		return 0;
 	}
 	var probSuccess = state.probability;
-	var probOther = (1 - probSuccess) / 3.0;
+	var probOther = (1 - probSuccess) / 2.0;
 	var scoreSum = probSuccess*util[""+resultingState(state, actionMove[0]).id];
 	for(var i = 1; i < actionMove.length; i++){
 		scoreSum += probOther*util[""+resultingState(state, actionMove[i]).id];
