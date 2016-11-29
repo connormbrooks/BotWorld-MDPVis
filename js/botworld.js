@@ -231,23 +231,103 @@ function validateInput(){
 	}
 }
 
+function validateText(){
+	try{
+		var textObject = JSON.parse(document.getElementById("usertext").value);
+	}catch(e){
+		alert("Syntax error in board specification");
+		return;
+	}
+	var rows = textObject.rows;
+	var cols = textObject.cols;
+	if(!Number.isInteger(rows) || !Number.isInteger(cols)){
+		alert("Board specification must specify rows and cols properties as integers");
+		return;
+	}
+	document.getElementById("InfoInput").innerHTML = "<button onclick='restart()'>Restart</button>";
+	generateBoard(rows,cols);
+	//turn off default ending tile before beginning
+	toggleEndingTile(1,1,true);
 
-function updateScore(row, col){
-	var score = parseFloat(document.getElementsByName('score')[0].value);
-	if(isNaN(score)){
-		alert("Invalid number format for score");
-	} else{
-		board.getElement(row,col).score = score;
-		document.getElementById(row+":"+col+"score").innerHTML = Math.round(score*1000)/1000.0;
-		document.getElementById("BottomInfoPanel").innerHTML = "";
-	} 
+	var start = textObject.start;
+	if(start.length == 2){
+		makeStartingTile(start[0],start[1]);
+	}
+
+	var enders = textObject.ends;
+	for(var i = 0; i < enders.length; i++){
+		if(enders[i].length == 2){
+			toggleEndingTile(enders[i][0],enders[i][1]);
+		}
+	}
+
+	var def_score = textObject.default_score;
+	var def_prob = textObject.default_probability_of_successful_move;
+	if(!isNaN(def_score)){
+		for(var i = 0; i < board.rows; i++){
+			for(var j = 0; j < board.cols; j++){
+				updateScore(i,j, def_score);
+			}
+		}
+	}
+
+	if(!isNaN(def_prob) && def_prob > 0 && def_prob < 1){
+		for(var i = 0; i < board.rows; i++){
+			for(var j = 0; j < board.cols; j++){
+				updateProbability(i, j, def_prob);
+			}
+		}
+	}
+
+	var score_updates = textObject.override_scores;
+	var tiles = Object.keys(score_updates);
+	for(var i = 0; i < tiles.length; i++){
+		try{
+			var tile = tiles[i].split(":");
+			var score = score_updates[tiles[i]];
+			updateScore(parseInt(tile[0]), parseInt(tile[1]), score);
+		} catch(err){
+			alert("Error in score override specifications");
+		}
+	}
+
+	var prob_updates = textObject.override_probabilities;
+	var tiles = Object.keys(prob_updates);
+	for(var i = 0; i < tiles.length; i++){
+		try{
+			var tile = tiles[i].split(":");
+			var prob = prob_updates[tiles[i]];
+			updateProbability(parseInt(tile[0]), parseInt(tile[1]), prob);
+		} catch(err){
+			alert("Error in probability override specifications");
+		}
+	}
+
 }
 
-function updateProbability(row, col){
-	var probability = parseFloat(document.getElementsByName('probability')[0].value);
+function updateScore(row, col, score=NaN){
+	if(isNaN(score)){
+		score = parseFloat(document.getElementsByName('score')[0].value);
+		if(isNaN(score)){
+			alert("Invalid number format for score");
+			return;
+		}
+	}
+	board.getElement(row,col).score = score;
+	document.getElementById(row+":"+col+"score").innerHTML = Math.round(score*1000)/1000.0;
+	document.getElementById("BottomInfoPanel").innerHTML = ""; 
+}
+
+function updateProbability(row, col, probability=NaN){
 	if(isNaN(probability)){
-		alert("Invalid number format for score");
-	} else if(probability < 0 || probability > 1){
+		probability = parseFloat(document.getElementsByName('probability')[0].value);
+		if(isNaN(probability)){
+			alert("Invalid number format for score");
+			return;
+		} 
+	}
+
+	if(probability < 0 || probability > 1){
 		alert("Probability of successful move must be between 0 and 1");
 	} else{
 		board.getElement(row,col).probability = probability;
@@ -322,7 +402,7 @@ function makeStartingTile(row, col){
 	addPolicyButton();
 }
 
-function toggleEndingTile(row, col){
+function toggleEndingTile(row, col, override = false){
 	if(board.startingTile[0] == row && board.startingTile[1] == col){
 		alert("Starting tile cannot be an ending tile!");
 	} else if(!(board.getElement(row,col).accessible)){
@@ -334,7 +414,7 @@ function toggleEndingTile(row, col){
 			document.getElementById(row+":"+col+"status").innerHTML = "END";
 			board.getElement(row,col).endingTile = true;
 		} else{
-			if(board.endingTiles.length == 1){
+			if(board.endingTiles.length == 1 && !override){
 				alert("Must have at least one ending tile");
 			} else {
 				board.endingTiles.splice(board.endingTiles.indexOf([row,col]),1);
@@ -436,6 +516,17 @@ function drawInstructions(){
 	+"<br><br>&gt;Once value iteration has been run, a policy is determined for each tile"
 	+"<br>&nbsp;&nbsp;&gt;The policy at a tile is shown on a tile with the corresponding letter(s) of the directions of intended movement"
 	+"<br>&nbsp;&nbsp;&nbsp;&nbsp;&gt;I.e. if the policy at tile A is move either left or right, 'L/R' will be displayed on the tile (in random order)</div>";
+	document.getElementById("Board").innerHTML = str;
+}
+
+function displayTextBox(){
+	var str = '<input type="submit" onclick="validateText()"/><br/><br/>'
+	+'<span style="font-size: 10pt;">Alter the given fields to design a custom gameboard...</span>'
+	+'<br><br><textarea rows="25" cols="50" id="usertext">'
+	+'{\n\t"rows": 3,\n\t"cols": 4,\n\t"start": [0,0],\n\t"ends": [[0,1],[1,1]],\n\t"inaccessibles": [[2,2],[2,3]],'
+	+'\n\n\t"default_score": 0,\n\t"default_probability_of_successful_move": 1,'
+	+'\n\n\t"override_scores": {\n\t\t"1:1": 2,\n\t\t"1:0": -1\n\t},'
+	+'\n\n\n\t"override_probabilities": {\n\t\t"0:0": 0.7,\n\t\t"2:1": 0.55\n\t}\n}</textarea>';
 	document.getElementById("Board").innerHTML = str;
 }
 
