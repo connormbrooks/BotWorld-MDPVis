@@ -529,7 +529,7 @@ function drawInstructions(){
 function displayTextBox(){
 	var str = '<input type="submit" onclick="validateText()"/><br/><br/>'
 	+'<span style="font-size: 10pt;">Alter the given fields to design a custom gameboard...</span>'
-	+'<br><br><textarea rows="25" cols="50" id="usertext">'
+	+'<br><br><textarea rows="25" cols="70" id="usertext">'
 	+'{\n\t"rows": 3,\n\t"cols": 4,\n\t"start": [0,0],\n\t"ends": [[0,1],[1,1]],\n\t"inaccessibles": [[2,2],[2,3]],'
 	+'\n\n\t"default_score": 0,\n\t"default_probability_of_successful_move": 1,'
 	+'\n\n\t"override_scores": {\n\t\t"1:1": 2,\n\t\t"1:0": -1\n\t},'
