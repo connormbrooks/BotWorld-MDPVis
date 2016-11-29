@@ -44,6 +44,8 @@ function boardObject(){
 	this.threshold = 1;
 }
 
+
+//tile object
 function boardSpace(id, row, col){
 	this.accessible = true;
 	this.score = 0;
@@ -54,6 +56,20 @@ function boardSpace(id, row, col){
 	this.utility = 0;
 	this.endingTile = false;
 	this.policy = "-";
+}
+
+//agent object
+function agent(leftRange,upRange,rightRange,downRange,leftProb,upProb,rightProb,downProb){
+	this.leftMaxRange = 10;
+	this.upMaxRange = 10;
+	this.rightMaxRange = 10;
+	this.downMaxRange = 10;
+	this.leftProbability = leftProb;
+	this.upProbability = upProb;
+	this.rightProbability = rightProb;
+	this.downProbability = downProb;
+	this.knowsStartingLocation = true;
+	this.beliefs = [];
 }
 
 //OBJECTS*********************************************************************
@@ -357,7 +373,7 @@ function generateBoard(rows, cols){
 	var counter = 1;
 	for(var i = 0; i < rows; i++){
 		boardElement.innerHTML = boardElement.innerHTML + "<div id='Row"+i
-			+"' style='padding-left: "+padding+"vw; float: left;'></div>";
+			+"' style='padding-left: "+padding+"vw; width: "+((100-1)-padding)+"vw; float: left;'></div>";
 		var rowElement = document.getElementById("Row"+i);
 		for(var j = 0; j < cols; j++){
 			board.addElement(new boardSpace(counter++, i, j));
@@ -650,3 +666,23 @@ function shuffleArr(array, slices){
 }
 
 //MDP HELPER FUNCTIONS*********************************************************************
+
+//POMDP HELPER FUNCTIONS********************************************************************
+
+function startingBeliefs(agnt){
+	var s = board.getAccessibleStates();
+	agnt.beliefs = [];
+	//set default belief state based on whether or not agent knows where it starts
+	var def_state = (agnt.knowsStartingLocation) ? 0 : 1.0/s.length;
+	for(var i = 0; i < s.length; i++){
+		agnt.beliefs[""+s[i].id] = def_state;
+	}
+	if(agnt.knowsStartingLocation){
+		//make the belief state 1 for the starting state
+		var start = board.getElement(board.startingTile[0],board.startingTile[1]);
+		agnt.beliefs[""+start.id] = 1;
+	}
+}
+
+
+//POMDP HELPER FUNCTIONS********************************************************************
