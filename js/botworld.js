@@ -261,6 +261,13 @@ function validateText(){
 		}
 	}
 
+	var inaccessibles = textObject.inaccessibles;
+	for(var i = 0; i < inaccessibles.length; i++){
+		if(inaccessibles[i].length == 2){
+			makeInaccessible(inaccessibles[i][0], inaccessibles[i][1]);
+		}
+	}
+
 	var def_score = textObject.default_score;
 	var def_prob = textObject.default_probability_of_successful_move;
 	if(!isNaN(def_score)){
