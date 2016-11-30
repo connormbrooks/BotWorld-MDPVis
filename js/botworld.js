@@ -45,6 +45,7 @@ function boardObject(){
 	this.cols = 2;
 	this.gamma = 0.1;
 	this.threshold = 1;
+	this.gradient = new Rainbow();
 }
 
 
@@ -638,23 +639,27 @@ function setupPOMDP(){
 	+ " &nbsp;<input type='radio' name='startknowledge' value='false'>False</input> <br/>"
 	+ " <button onclick='validatePOMDPInput()'>Run</button>";
 	document.getElementById("TopInfoPanel").innerHTML = str;
+	board.gradient.setSpectrum("blue", "red");
+	board.gradient.setNumberRange(0,1000);
 }
 
 //use a 'heatmap' to color tiles based on agent beliefs 
 //(deeper colors = stronger belief that agent is in that state)
 function drawBeliefs(agnt){
 	var stateIDs = Object.keys(agnt.beliefs);
+	//var x = deepCopy(agnt.beliefs);
+	//console.log(x);
 	for(var i = 0; i < stateIDs.length; i++){
 		var tile = board.getElementById(stateIDs[i]);
 		var belief = agnt.beliefs[""+tile.id];
-		if(belief == 0){
+		if(belief < 0.000001){
 			document.getElementById(tile.row+":"+tile.col).style["background-color"] = "white";
 		} else {
-			document.getElementById(tile.row+":"+tile.col).style["background-color"] = "rgb(255,"
-			+""+(210 - belief*210)+","+(210-belief*210)+")";
+			document.getElementById(tile.row+":"+tile.col).style["background-color"] = board.gradient.colourAt(Math.floor(belief * 1000));
 		}
 	}
 }
+
 
 function clearBeliefs(){
 	var states = board.getAccessibleStates();
