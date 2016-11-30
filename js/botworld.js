@@ -1,6 +1,9 @@
 //universally accessible board object
 var board;
 
+//univerisally accessible simulation state for holding data during pause
+var simState;
+
 //flag for interrupting running processes
 var HALT = false;
 
@@ -72,6 +75,14 @@ function agent(leftProb,upProb,rightProb,downProb,knowsStart){
 	};
 	this.knowsStartingLocation = knowsStart;
 	this.beliefs = {};
+}
+
+//pause object
+function pause(tile, score, agnt, mode){
+	this.tile = tile;
+	this.score = score;
+	this.agnt = agnt;
+	this.mode = mode;
 }
 
 //OBJECTS*********************************************************************
@@ -174,8 +185,7 @@ function run(agnt = null, mode = 0){
 function getNextState(tile, score, agnt, mode){
 	var el = board.getElement(tile[0], tile[1]);
 	score += el.score;
-	if(el.endingTile || HALT){
-		HALT = false;
+	if(el.endingTile){
 		if(mode == 0){
 			endRun(tile, score);
 		} else {
@@ -231,14 +241,27 @@ function getNextState(tile, score, agnt, mode){
 		drawBeliefs(agnt);
 	}
 
-	setTimeout(function(){
-		getNextState(newTile, score, agnt, mode);
-	}, 250);
+	if(HALT){
+		HALT = false;
+		simState = new pause(newTile, score, agnt, mode);
+		drawResumeRun();
+	} else {
+		setTimeout(function(){
+			getNextState(newTile, score, agnt, mode);
+		}, 250);
+	}
 }
 
 function stopRun(){
 	//flip halting flag
 	HALT = true;
+}
+
+function resumeRun(){
+	drawStopRun();
+	setTimeout(function(){
+		getNextState(simState.tile, simState.score, simState.agnt, simState.mode);
+	}, 250);
 }
 
 //MAIN FUNCTIONS*********************************************************************
@@ -583,7 +606,11 @@ function addRunButton(c){
 }
 
 function drawStopRun(){
-	document.getElementById("TopInfoPanel").innerHTML = "<button onclick='stopRun()'>Stop Run</button>"
+	document.getElementById("TopInfoPanel").innerHTML = "<button onclick='stopRun()'>Pause Run</button>";
+}
+
+function drawResumeRun(){
+	document.getElementById("TopInfoPanel").innerHTML = "<button onclick='resumeRun()'>Resume Run</button>";
 }
 
 function restart(){
