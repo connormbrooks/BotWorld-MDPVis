@@ -16,11 +16,14 @@ function boardObject(){
 	this.idLocationMat = [];
 
 	this.addElement = function(el){
-		this.boardMat[el.row+"_"+el.col] = el;
-		this.idLocationMat[""+el.id] = el.row+"_"+el.col;
+		this.boardMat[el.row+":"+el.col] = el;
+		this.idLocationMat[""+el.id] = el.row+":"+el.col;
 	}
 	this.getElement = function(row, col){
-		return this.boardMat[row+"_"+col];
+		if(row < 0 || row >= this.rows || col < 0 || col >= this.cols){
+			return null;
+		}
+		return this.boardMat[row+":"+col];
 	}
 	this.getElementById = function(id){
 		return this.boardMat[this.idLocationMat[""+id]];
@@ -59,17 +62,15 @@ function boardSpace(id, row, col){
 }
 
 //agent object
-function agent(leftRange,upRange,rightRange,downRange,leftProb,upProb,rightProb,downProb){
-	this.leftMaxRange = 10;
-	this.upMaxRange = 10;
-	this.rightMaxRange = 10;
-	this.downMaxRange = 10;
-	this.leftProbability = leftProb;
-	this.upProbability = upProb;
-	this.rightProbability = rightProb;
-	this.downProbability = downProb;
-	this.knowsStartingLocation = true;
-	this.beliefs = [];
+function agent(leftProb,upProb,rightProb,downProb,knowsStart){
+	this.probabilities = {
+		"L" : leftProb,
+		"U" : upProb,
+		"R" : rightProb,
+		"D" : downProb
+	};
+	this.knowsStartingLocation = knowsStart;
+	this.beliefs = {};
 }
 
 //OBJECTS*********************************************************************
@@ -114,7 +115,7 @@ function iterate(s, util_prime, count){
 	var delta = 0;
 	for(var i = 0; i < s.length; i++){
 		util_prime[""+s[i].id] = board.getElementById(s[i].id).score 
-		+ board.gamma*Math.max(scoreAction(s[i],"UP",util),scoreAction(s[i],"RIGHT",util), scoreAction(s[i],"DOWN",util),scoreAction(s[i],"LEFT",util));
+		+ board.gamma*Math.max(scoreAction(s[i],"U",util),scoreAction(s[i],"R",util), scoreAction(s[i],"D",util),scoreAction(s[i],"L",util));
 		if(Math.abs(util_prime[""+s[i].id] - util[""+s[i].id]) > delta){
 			delta = Math.abs(util_prime[""+s[i].id] - util[""+s[i].id]);
 		}
@@ -137,7 +138,7 @@ function setPolicy(util){
 	var keys = Object.keys(util);
 	for(var i = 0; i < keys.length; i++){
 		var state = board.getElementById(keys[i]);
-		var moves = ["UP", "RIGHT", "DOWN", "LEFT"];
+		var moves = ["U", "R", "D", "L"];
 		//mix up moves to make it random which one is chosen as best when there are equal utilities
 		moves = shuffleArr(moves, 10);
 		var bestMove = moves[0][0];
@@ -156,27 +157,44 @@ function setPolicy(util){
 	}
 }
 
-function run(){
+function run(agnt = null, mode = 0){
 	setCurrentState(board.startingTile,null);
+	if(mode > 0 && agnt != null){
+		startingBeliefs(agnt);
+		drawBeliefs(agnt);
+	}
 	HALT = false;
 	drawStopRun();
 	setTimeout(function(){
-		getNextState(board.startingTile, 0);
+		getNextState(board.startingTile, 0, agnt, mode);
 	}, 100);
 }
 
-function getNextState(tile, score){
+function getNextState(tile, score, agnt, mode){
 	var el = board.getElement(tile[0], tile[1]);
 	score += el.score;
 	if(el.endingTile || HALT){
 		HALT = false;
-		endRun(tile, score);
+		endRun(tile, score, agnt, mode);
 		return;
 	}
-	var optimum = getPolicyMove(tile);
-	var altMoves = getAltMoves(optimum);
+
+	//note that the actual probability of a successful movement is contingent on the ACTUAL tile
+	//is not affected by the belief state of the agent
 	var probSuccess = board.getElement(tile[0], tile[1]).probability;
 	var probEachOther = (1-probSuccess)/2.0;
+
+	var optimum = null; 
+	var altMoves = null;
+	//find chosen move based on mode of MDP or POMDP
+	if(mode == 0){
+		optimum = getPolicyMove(tile);
+	} else if (mode == 1){
+		//for this greedy POMDP solver, just do the policy for the dominant belief state
+		var domBelief = getDominantBeliefState(agnt);
+		optimum = getPolicyMove([domBelief.row,domBelief.col]);
+	}
+	altMoves = getSideMoves(optimum);
 
 	var randomRoll = Math.random();
 	if(randomRoll < probSuccess){
@@ -198,9 +216,19 @@ function getNextState(tile, score){
 
 	//make move
 	setCurrentState(newTile,tile);
+
+	//if POMDP, update belief state
+	if(mode > 0){
+		var sense = getSensors(agnt, newTile);
+		//forward the belief state based on the chosen action
+		forwardBeliefs(agnt, optimum, sense);
+		//draw new beliefs
+		drawBeliefs(agnt);
+	}
+
 	setTimeout(function(){
-		getNextState(newTile, score);
-	}, 100);
+		getNextState(newTile, score, agnt, mode);
+	}, 200);
 }
 
 function stopRun(){
@@ -217,11 +245,12 @@ function stopRun(){
 //This function creates a matrix of appropriate size to use for internal model of game
 //also modifies HTML to create divs for gameboard on screen
 
-function endRun(tile, score){
-	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run()'>Run Again</button>";
+function endRun(tile, score, agnt, mode){
+	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run(agnt, mode)'>Run Again</button>";
 	setTimeout(function(){
 		document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "0%";
-	}, 1000);
+		clearBeliefs();
+	}, 700);
 }
 
 function setCurrentState(tile,lastTile){
@@ -229,6 +258,29 @@ function setCurrentState(tile,lastTile){
 		document.getElementById(lastTile[0]+":"+lastTile[1]).style["border-radius"] = "0%";
 	}
 	document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "50%";
+}
+
+function validatePOMDPInput(){
+	var left = parseFloat(document.getElementsByName("leftsensor")[0].value);
+	var up = parseFloat(document.getElementsByName("upsensor")[0].value);
+	var right = parseFloat(document.getElementsByName("rightsensor")[0].value);
+	var down = parseFloat(document.getElementsByName("downsensor")[0].value);
+	if(isNaN(left) || left < 0 || left > 1 || isNaN(up) || up < 0 || up > 1 
+		|| isNaN(right) || right < 0 || right > 1 || isNaN(down) || down < 0 || down > 1){
+		alert("Sensor probabilities must be numbers between 0 and 1");
+		return;
+	}
+	var radios = document.getElementsByName("startknowledge");
+	var knowsStart = true;
+	for(var i = 0; i < radios.length; i++){
+		if(radios[i].checked){
+			knowsStart = eval(radios[i].value);
+		}
+	}
+	var agnt = new agent(left, up, right, down, knowsStart);
+	//TODO: add entropy-based greedy method as separate mode option for POMDPs
+	var mode = 1;
+	run(agnt, mode);
 }
 
 function validateInput(){
@@ -506,7 +558,8 @@ function setIteratingStatus(){
 }
 
 function addRunButton(c){
-	document.getElementById("TopInfoPanel").innerHTML = "Utility convergence after: "+c+" iterations<br/><button onclick='run()'>Run</button>";
+	document.getElementById("TopInfoPanel").innerHTML = "Utility convergence after: "+c+" iterations<br/>"
+	+"<button onclick='run()'>Run as fully-observable world</button> <button onclick='setupPOMDP()'>Run as partially-observable world</button>";
 }
 
 function drawStopRun(){
@@ -553,39 +606,120 @@ function displayTextBox(){
 	document.getElementById("Board").innerHTML = str;
 }
 
+function setupPOMDP(){
+	var str = "Set probability that each range sensor correctly"
+	+ " senses distance to closest wall. <br>If sensor does not return the correct distance,<br> it has a uniformly"
+	+ " distributed chance of returning all numbers less than the correct distance. <br>Thus, a noisy sensor will never overestimate"
+	+ " the distance to the closest wall, <br>and will always be correct when directly adjacent to a wall<br><br>"
+	+ " Left Range Sensor Probability: <input type='text' name='leftsensor' /> <br/>"
+	+ " Up Range Sensor Probability: <input type='text' name='upsensor' /> <br/>"
+	+ " Right Range Sensor Probability: <input type='text' name='rightsensor' /> <br/>"
+	+ " Down Range Sensor Probability: <input type='text' name='downsensor' /> <br/>"
+	+ " Agent knows starting tile: <input type='radio' name='startknowledge' value='true' checked>True</input>"
+	+ " &nbsp;<input type='radio' name='startknowledge' value='false'>False</input> <br/>"
+	+ " <button onclick='validatePOMDPInput()'>Run</button>";
+	document.getElementById("TopInfoPanel").innerHTML = str;
+}
+
+//use a 'heatmap' to color tiles based on agent beliefs 
+//(deeper colors = stronger belief that agent is in that state)
+function drawBeliefs(agnt){
+	var x = deepCopy(agnt.beliefs);
+	console.log(x);
+	var stateIDs = Object.keys(agnt.beliefs);
+	for(var i = 0; i < stateIDs.length; i++){
+		var tile = board.getElementById(stateIDs[i]);
+		var belief = agnt.beliefs[""+tile.id];
+		if(belief == 0){
+			document.getElementById(tile.row+":"+tile.col).style["background-color"] = "white";
+		} else {
+			document.getElementById(tile.row+":"+tile.col).style["background-color"] = "rgb(255,"
+			+""+(210 - belief*210)+","+(210-belief*210)+")";
+		}
+	}
+}
+
+function clearBeliefs(){
+	var states = board.getAccessibleStates();
+	for(var i = 0; i < states.length; i++){
+		document.getElementById(states[i].row+":"+states[i].col).style["background-color"] = "white";
+	}
+}
+
 //HTML MODIFIERS*********************************************************************
 
 
 
 //MDP HELPER FUNCTIONS*********************************************************************
 
-function getPolicyMove(tile){
-	var policy = board.getElement(tile[0],tile[1]).policy;
-	var policy_split = policy.split("/");
-	//choose a random move in the case of multiple moves in policy
-	var move = policy_split[Math.floor(Math.random()*policy_split.length)];
-
-	if(move == "U"){
-		return [-1,0];
-	} else if(move == "R"){
-		return [0,1];
-	} else if(move == "D"){
-		return [1,0];
-	} else if(move == "L"){
+function directionToArray(str){
+	if(str == "U"){
+		return [-1, 0];
+	} else if (str == "R"){
+		return [0, 1];
+	} else if (str == "D"){
+		return [1, 0];
+	} else if (str == "L"){
 		return [0,-1];
 	} else {
-		console.log("Error in policy");
+		alert("Unrecognized direction encountered");
 		return [0,0];
 	}
 }
 
+function arrayToDirection(arr){
+	if(arr == [-1, 0]){
+		return "U";
+	} else if (arr == [0, 1]){
+		return "R";
+	} else if (arr == [1, 0]){
+		return "D";
+	} else if (arr == [0, -1]){
+		return "L";
+	} else {
+		alert("Unrecognized direction encountered");
+		return "";
+	}
+}
+
 //finds moves to relative left and right of an intended move
-function getAltMoves(move){
+function getSideMoves(move){
 	if(move[0] != 0){
 		return [[0,1],[0,-1]];
 	} else {
 		return [[1,0],[-1,0]];
 	}
+}
+
+function getPolicyMove(tile){
+	var policy = board.getElement(tile[0],tile[1]).policy;
+	var policy_split = policy.split("/");
+	//choose a random move in the case of multiple moves in policy
+	var move = policy_split[Math.floor(Math.random()*policy_split.length)];
+	return directionToArray(move);
+}
+
+
+//returns states accessible from current state
+function getAdjacentAccessibleStates(state){
+	var successors = [];
+	var moves = [[-1,0],[0,1],[1,0],[0,-1]];
+	var newState;
+	var local_inaccessibles = false;
+	for(var i = 0; i < moves.length; i++){
+		newState = board.getElement(state.row + moves[i][0], state.col + moves[i][1]);
+		if(newState != null && newState.accessible){
+			successors.push(newState);
+		} else {
+			local_inaccessibles = true;
+		}
+	}
+	//if there are any inaccessible states around, the current state is a possible adjacent state
+	//since landing on an inaccessible state "bounces" the agent back to the current state
+	if(local_inaccessibles){
+		successors.push(state);
+	}
+	return successors;
 }
 
 function scoreAction(state, action, util){
@@ -594,15 +728,17 @@ function scoreAction(state, action, util){
 		return 0;
 	}
 
+	//TODO: clean this up using getTransitionProbability and getAdjacentAccessibleStates
+
 	//sum up four possible results from an action (intended action + 3 unintended actions)
 	var actionMove;
-	if(action == "UP"){
+	if(action == "U"){
 		actionMove = [[-1, 0], [0, 1], [0, -1]];
-	} else if (action == "RIGHT"){
+	} else if (action == "R"){
 		actionMove = [[0, 1], [-1, 0], [1, 0]];
-	} else if (action == "DOWN"){
+	} else if (action == "D"){
 		actionMove = [[1, 0], [0, 1], [0, -1]];
-	} else if (action == "LEFT"){
+	} else if (action == "L"){
 		actionMove = [[0, -1], [-1, 0], [1, 0]];
 	} else {
 		console.log("Invalid action");
@@ -665,13 +801,82 @@ function shuffleArr(array, slices){
 	return array;
 }
 
+
+//probability that taking action in state leads to newState
+function getTransitionProbability(state, action, newState){
+	if(resultingState(state, action) == newState){
+		return state.probability;
+	} else {
+		var slips = getSideMoves(action);
+		if(slips.length == 2){
+			if(resultingState(state, slips[0]) == newState || resultingState(state, slips[1]) == newState){
+				return (1 - state.probability) / 2.0;
+			} else {
+				//not a possible resulting state
+				return 0;
+			}
+		}
+	}
+}
 //MDP HELPER FUNCTIONS*********************************************************************
+
 
 //POMDP HELPER FUNCTIONS********************************************************************
 
+//find the most likely belief state for the agent
+function getDominantBeliefState(agnt){
+	var states = Object.keys(agnt.beliefs);
+	var maxStateBelief = 0;
+	for(var i = 1; i < states.length; i++){
+		if(agnt.beliefs[states[i]] > agnt.beliefs[states[maxStateBelief]]){
+			maxStateBelief = i;
+		}
+	}
+	return board.getElementById(states[maxStateBelief]);
+}
+
+function getSensors(agnt, stateLoc){
+	var sensePack = [];
+	var directions = ["L", "U", "R", "D"];
+	for(var i = 0; i < directions.length; i++){
+		var range = findRange(stateLoc, directions[i]);
+		var roll = Math.random();
+		var baseProbability = agnt.probabilities[directions[i]];
+		var selected = false;
+		if(roll < baseProbability || range == 0){
+			//sensor correctly detects range
+			sensePack[directions[i]] = range;
+			selected = true;
+		} else {
+			//odds are distributed evenly between all numbers up to range
+			var altProbability = (1 - baseProbability) / range;
+			for(var j = 0; j < range; j++){
+				if(roll < baseProbability + (j+1)*altProbability){
+					sensePack[directions[i]] = j;
+					selected = true;
+					break;
+				}
+			}
+
+			//because of rounding errors, there is a slight chance none could be selected yet
+			if(!selected){
+				sensePack[directions[i]] = range;
+				selected = true;
+			}
+		}
+	}
+	return sensePack; 
+}
+
+//setup starting belief state for agent
 function startingBeliefs(agnt){
 	var s = board.getAccessibleStates();
-	agnt.beliefs = [];
+	//first clear the beliefs object
+	var keys = Object.keys(agnt.beliefs);
+	for (var i = 0; i < keys.length; i++){
+		delete agnt.beliefs[keys[i]];
+	}
+	//then...
 	//set default belief state based on whether or not agent knows where it starts
 	var def_state = (agnt.knowsStartingLocation) ? 0 : 1.0/s.length;
 	for(var i = 0; i < s.length; i++){
@@ -684,10 +889,72 @@ function startingBeliefs(agnt){
 	}
 }
 
-/*
+//Update belief state for the agent based on the current belief state, the action taken, and the sensory input received
 function forwardBeliefs(agnt, action, sense){
-
+	var states = Object.keys(agnt.beliefs);
+	var newBeliefs = deepCopy(agnt.beliefs);
+	//build alpha as we generate each new belief - will use it 
+	var alpha = 0.0;
+	for(var i = 0; i < states.length; i++){
+		var stateTile = board.getElementById(states[i]);
+		newBeliefs[states[i]] = probabilityOfSensing(agnt, stateTile, sense) * sumPossibleLastStates(stateTile, action, agnt);
+		alpha += newBeliefs[states[i]];
+	}
+	//once alpha is finished being computed, go back through and divide all beliefs by alpha to make them sum to 1
+	for(var j = 0; j < states.length; j++){
+		agnt.beliefs[states[j]] = (newBeliefs[states[j]] / alpha);
+	}
 }
-*/
+
+//finds the probability that agent gets sensory input sense in given state
+function probabilityOfSensing(agnt, state, sense){
+	//agent has specified probability of sensing correctly. 
+	//if the agent does not sense correctly, it has a uniform probability of sensing all possible values less than actual value
+	//consequently, the sensor never senses too far and always senses correctly when directly next to a wall
+	var directions = ["L", "U", "R", "D"];
+	var overallProb = 1;
+	var range, prob;
+	//find the probability of sensing what was sensed in each of the four directions and multiply by each other
+	for(var i = 0; i < directions.length; i++){
+		range = findRange([state.row,state.col], directions[i]);
+		if(range == 0 && sense[directions[i]] == 0){
+			prob = 1;
+		} else if(range == 0 && sense[directions[i]] != 0){
+			prob = 0;
+		} else if (sense[directions[i]] == range){
+			prob = agnt.probabilities[directions[i]];
+		} else {
+			prob = (1 - agnt.probabilities[directions[i]])/range;
+		}
+		overallProb = overallProb * prob;
+	}
+	return overallProb;
+}
+
+//finds term that is the sum of the probabilities that any "originating" state could end up in the given state
+//after taking the given action, multiplied by the belief that the agent was in the "originating" state
+function sumPossibleLastStates(state, action, agnt){
+	//the only possible states that could lead to this state are the adjacent states,
+	// so these are the only ones we need to check
+	var sum = 0;
+	var adj = getAdjacentAccessibleStates(state);
+	for(var i = 0; i < adj.length; i++){
+		sum += getTransitionProbability(adj[i], action, state) * agnt.beliefs[""+adj[i].id];
+	}
+	return sum;
+}
+
+
+//finds the ACTUAL range in a given direction from a given state (what would be returned from a perfect sensor)
+function findRange(stateLoc, direction){
+	move = directionToArray(direction);
+	var count = 0;
+	var newState = board.getElement(stateLoc[0] + move[0], stateLoc[1] + move[1]);
+	while(newState != null && newState.accessible){
+		count++;
+		newState = board.getElement(newState.row + move[0], newState.col + move[1]);
+	}
+	return count;
+}
 
 //POMDP HELPER FUNCTIONS********************************************************************
