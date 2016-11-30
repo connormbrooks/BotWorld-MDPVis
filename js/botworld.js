@@ -176,7 +176,7 @@ function getNextState(tile, score, agnt, mode){
 	score += el.score;
 	if(el.endingTile || HALT){
 		HALT = false;
-		if(mode < 0){
+		if(mode == 0){
 			endRun(tile, score);
 		} else {
 			endPOMDPRun(tile, score, agnt);
