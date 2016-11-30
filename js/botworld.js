@@ -220,15 +220,15 @@ function stopRun(){
 function endRun(tile, score){
 	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run()'>Run Again</button>";
 	setTimeout(function(){
-		document.getElementById(tile[0]+":"+tile[1]).style["background-color"] = "white";
+		document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "0%";
 	}, 1000);
 }
 
 function setCurrentState(tile,lastTile){
 	if(lastTile != null){
-		document.getElementById(lastTile[0]+":"+lastTile[1]).style["background-color"] = "white";
+		document.getElementById(lastTile[0]+":"+lastTile[1]).style["border-radius"] = "0%";
 	}
-	document.getElementById(tile[0]+":"+tile[1]).style["background-color"] = "blue";
+	document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "50%";
 }
 
 function validateInput(){
@@ -684,5 +684,10 @@ function startingBeliefs(agnt){
 	}
 }
 
+/*
+function forwardBeliefs(agnt, action, sense){
+
+}
+*/
 
 //POMDP HELPER FUNCTIONS********************************************************************
