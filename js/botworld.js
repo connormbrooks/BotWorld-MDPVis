@@ -175,7 +175,11 @@ function getNextState(tile, score, agnt, mode){
 	score += el.score;
 	if(el.endingTile || HALT){
 		HALT = false;
-		endRun(tile, score, agnt, mode);
+		if(mode < 0){
+			endRun(tile, score);
+		} else {
+			endPOMDPRun(tile, score, agnt);
+		}
 		return;
 	}
 
@@ -228,7 +232,7 @@ function getNextState(tile, score, agnt, mode){
 
 	setTimeout(function(){
 		getNextState(newTile, score, agnt, mode);
-	}, 200);
+	}, 250);
 }
 
 function stopRun(){
@@ -245,8 +249,21 @@ function stopRun(){
 //This function creates a matrix of appropriate size to use for internal model of game
 //also modifies HTML to create divs for gameboard on screen
 
-function endRun(tile, score, agnt, mode){
-	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run(agnt, mode)'>Run Again</button>";
+function endRun(tile, score){
+	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run()'>Run Again</button>";
+	setTimeout(function(){
+		document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "0%";
+	}, 700);
+}
+function endPOMDPRun(tile, score, agnt){
+	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/>"
+	+ " Left Range Sensor Probability: <input type='text' name='leftsensor' /> <br/>"
+	+ " Up Range Sensor Probability: <input type='text' name='upsensor' /> <br/>"
+	+ " Right Range Sensor Probability: <input type='text' name='rightsensor' /> <br/>"
+	+ " Down Range Sensor Probability: <input type='text' name='downsensor' /> <br/>"
+	+ " Agent knows starting tile: <input type='radio' name='startknowledge' value='true' checked>True</input>"
+	+ " &nbsp;<input type='radio' name='startknowledge' value='false'>False</input> <br/>"
+	+ " <button onclick='validatePOMDPInput()'>Run</button>";
 	setTimeout(function(){
 		document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "0%";
 		clearBeliefs();
@@ -261,6 +278,7 @@ function setCurrentState(tile,lastTile){
 }
 
 function validatePOMDPInput(){
+	var createHTML = document.getElementById("BottomInfoPanel").innerHTML;
 	var left = parseFloat(document.getElementsByName("leftsensor")[0].value);
 	var up = parseFloat(document.getElementsByName("upsensor")[0].value);
 	var right = parseFloat(document.getElementsByName("rightsensor")[0].value);
@@ -278,6 +296,7 @@ function validatePOMDPInput(){
 		}
 	}
 	var agnt = new agent(left, up, right, down, knowsStart);
+	agnt.create_text = createHTML;
 	//TODO: add entropy-based greedy method as separate mode option for POMDPs
 	var mode = 1;
 	run(agnt, mode);
@@ -624,8 +643,6 @@ function setupPOMDP(){
 //use a 'heatmap' to color tiles based on agent beliefs 
 //(deeper colors = stronger belief that agent is in that state)
 function drawBeliefs(agnt){
-	var x = deepCopy(agnt.beliefs);
-	console.log(x);
 	var stateIDs = Object.keys(agnt.beliefs);
 	for(var i = 0; i < stateIDs.length; i++){
 		var tile = board.getElementById(stateIDs[i]);
