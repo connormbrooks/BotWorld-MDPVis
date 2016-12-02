@@ -67,7 +67,7 @@ function agent(leftProb,upProb,rightProb,downProb,knowsStart){
 	this.beliefs = {};
 }
 
-//pause object
+//pause object for storing info during pause
 function pause(tile, score, agnt, mode){
 	this.tile = tile;
 	this.score = score;
@@ -81,6 +81,7 @@ function pause(tile, score, agnt, mode){
 
 //MDP HELPER FUNCTIONS*********************************************************************
 
+//conversion function
 function directionToArray(str){
 	if(str == "U"){
 		return [-1, 0];
@@ -96,6 +97,8 @@ function directionToArray(str){
 	}
 }
 
+
+//conversion function
 function arrayToDirection(arr){
 	if(arr[0] == -1 && arr[1] == 0){
 		return "U";
@@ -120,6 +123,7 @@ function getSideMoves(move){
 	}
 }
 
+//returns the policy move for a given tile/state
 function getPolicyMove(tile){
 	var policy = board.getElement(tile[0],tile[1]).policy;
 	var policy_split = policy.split("/");
@@ -151,37 +155,23 @@ function getAdjacentAccessibleStates(state){
 	return successors;
 }
 
+//Calculates P(s' | s, a) * U(s')
 function scoreAction(state, action, util){
 	//first check if this is an ending tile
 	if(state.endingTile){
 		return 0;
 	}
 
-	//TODO: clean this up using getTransitionProbability and getAdjacentAccessibleStates
-
-	//sum up four possible results from an action (intended action + 3 unintended actions)
-	var actionMove;
-	if(action == "U"){
-		actionMove = [[-1, 0], [0, 1], [0, -1]];
-	} else if (action == "R"){
-		actionMove = [[0, 1], [-1, 0], [1, 0]];
-	} else if (action == "D"){
-		actionMove = [[1, 0], [0, 1], [0, -1]];
-	} else if (action == "L"){
-		actionMove = [[0, -1], [-1, 0], [1, 0]];
-	} else {
-		console.log("Invalid action");
-		return 0;
-	}
-	var probSuccess = state.probability;
-	var probOther = (1 - probSuccess) / 2.0;
-	var scoreSum = probSuccess*util[""+resultingState(state, actionMove[0]).id];
-	for(var i = 1; i < actionMove.length; i++){
-		scoreSum += probOther*util[""+resultingState(state, actionMove[i]).id];
+	var adjStates = getAdjacentAccessibleStates(state);
+	var scoreSum = 0;
+	//for each state, add probability that (state, action) lands in that state times new state's utility
+	for(var i = 0; i < adjStates.length; i++){
+		scoreSum += getTransitionProbability(state, directionToArray(action), adjStates[i]) * util[""+adjStates[i].id];
 	}
 	return scoreSum;
 }
 
+//Finds the resulting state object given a state and an action
 function resultingState(state, action){
 	var newRow = state.row + action[0];
 	var newCol = state.col + action[1];
@@ -193,6 +183,7 @@ function resultingState(state, action){
 	}
 }
 
+//Sets the utilities on all state objects after they are finished being computed
 function setUtilities(vec){
 	var ids = Object.keys(vec);
 	for(var i = 0; i < ids.length; i++){
@@ -202,6 +193,8 @@ function setUtilities(vec){
 	}
 }
 
+
+//set all accessible states' starting utilities to 0
 function startingUtilities(states){
 	util = [];
 	for(var i = 0; i < states.length; i++){
@@ -210,6 +203,7 @@ function startingUtilities(states){
 	return util;
 }
 
+//deep copy elements - useful when performing value iteration
 function deepCopy(obj){
 	var newobj = [];
 	var properties = Object.keys(obj);
@@ -219,6 +213,7 @@ function deepCopy(obj){
 	return newobj;
 }
 
+//shuffle an array - used for randomizing policy between equally optimal choices
 function shuffleArr(array, slices){
 	for(var i = 0; i < slices; i++){
 		var mover = Math.floor(Math.random() * array.length);
@@ -263,6 +258,7 @@ function getDominantBeliefState(agnt){
 	return board.getElementById(states[maxStateBelief]);
 }
 
+//create a new sensory input for an agent
 function getSensors(agnt, stateLoc){
 	var sensePack = [];
 	var directions = ["L", "U", "R", "D"];
@@ -386,7 +382,8 @@ function findRange(stateLoc, direction){
 }
 
 
-//Use Q-MDP to find next move
+//Use Q-MDP algorithm to find next move
+//Move: Max over all actions a (Sum over all states (belief(s) * Q(s,a)))
 function getQMDP(agnt){
 	var possibleMoves = [[1,0],[-1,0],[0,1],[0,-1]];
 	var best = Number.MIN_VALUE;

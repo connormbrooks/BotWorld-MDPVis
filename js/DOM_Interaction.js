@@ -1,8 +1,7 @@
+//These functions are used for updating the actual HTML on the page and validating user input
+//Comments are few because most functions simply update text and do nothing worth mentioning
+
 //HTML MODIFIERS*********************************************************************
-
-//This function creates a matrix of appropriate size to use for internal model of game
-//also modifies HTML to create divs for gameboard on screen
-
 function endRun(tile, score){
 	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run()'>Run Again</button>";
 	setTimeout(function(){
@@ -10,6 +9,7 @@ function endRun(tile, score){
 		clearBottomInfo();
 	}, 700);
 }
+
 function endPOMDPRun(tile, score, agnt){
 	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/>"
 	+ " Left Range Sensor Probability: <input type='text' name='leftsensor' value='"+agnt.probabilities["L"]+"'/> <br/>"
@@ -73,6 +73,7 @@ function validateInput(){
 	}
 }
 
+//validates text-based world creation
 function validateText(){
 	try{
 		var textObject = JSON.parse(document.getElementById("usertext").value);

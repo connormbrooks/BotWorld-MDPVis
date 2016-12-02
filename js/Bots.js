@@ -10,6 +10,7 @@ var HALT = false;
 
 //MAIN FUNCTIONS*********************************************************************
 
+//Handle board clicks
 function boardClick(div){
 	var divId = div.id;
 	var row = parseInt(divId.split(":")[0]);
@@ -19,6 +20,7 @@ function boardClick(div){
 	drawTileData(el);
 }
 
+//Validate input before beginning value iteration
 function policy(){
 	var gamma = parseFloat(document.getElementsByName("gamma")[0].value);
 	if(isNaN(gamma) || gamma < 0 || gamma > 1){
@@ -35,6 +37,7 @@ function policy(){
 	}
 }
 
+//start value iteration
 function valueIteration(){
 	var s = board.getAccessibleStates();
 	var util = startingUtilities(s);
@@ -42,9 +45,12 @@ function valueIteration(){
 	iterate(s, util, 1);
 }
 
+//Main value iteration loop
 function iterate(s, util_prime, count){
 	var util = deepCopy(util_prime);
 	var delta = 0;
+	//value iteration algorithm from slides:
+	// U'[s] = R(s) + gamme * max over all actions(sum for all s' (P(s' | s, a) * U[s']))
 	for(var i = 0; i < s.length; i++){
 		util_prime[""+s[i].id] = board.getElementById(s[i].id).score 
 		+ board.gamma*Math.max(scoreAction(s[i],"U",util),scoreAction(s[i],"R",util), scoreAction(s[i],"D",util),scoreAction(s[i],"L",util));
@@ -52,6 +58,7 @@ function iterate(s, util_prime, count){
 			delta = Math.abs(util_prime[""+s[i].id] - util[""+s[i].id]);
 		}
 	}
+	//check if we are under the threshold used for stopping criteria
 	if(delta >= (board.threshold*(1-board.gamma))/board.gamma){
 		//iterate again
 		setTimeout(function(){
@@ -66,6 +73,8 @@ function iterate(s, util_prime, count){
 	}
 }
 
+
+//use calculated utilities to set policy for each state 
 function setPolicy(util){
 	clearOptions();
 	var keys = Object.keys(util);
@@ -90,6 +99,7 @@ function setPolicy(util){
 	}
 }
 
+//Run agent simulation
 function run(agnt = null, mode = 0){
 	clearOptions();
 	setCurrentState(board.startingTile,null);
@@ -104,9 +114,11 @@ function run(agnt = null, mode = 0){
 	}, 100);
 }
 
+//Finds the next move of the agent during a simulation
 function getNextState(tile, score, agnt, mode){
 	var el = board.getElement(tile[0], tile[1]);
 	score += el.score;
+	//first check if an ending tile has been reached
 	if(el.endingTile){
 		if(mode == 0){
 			endRun(tile, score);
@@ -116,8 +128,7 @@ function getNextState(tile, score, agnt, mode){
 		return;
 	}
 
-	//note that the actual probability of a successful movement is contingent on the ACTUAL tile
-	//is not affected by the belief state of the agent
+	//get probability that whatever move is chosen will be successful
 	var probSuccess = board.getElement(tile[0], tile[1]).probability;
 	var probEachOther = (1-probSuccess)/2.0;
 
@@ -138,6 +149,7 @@ function getNextState(tile, score, agnt, mode){
 	}
 	altMoves = getSideMoves(optimum);
 
+	//now use a random number to determine if optimal move is used or if there is a 'slip'
 	var randomRoll = Math.random();
 	if(randomRoll < probSuccess){
 		//take the best move
@@ -181,11 +193,13 @@ function getNextState(tile, score, agnt, mode){
 	}
 }
 
+//Pause button clicked
 function stopRun(){
 	//flip halting flag
 	HALT = true;
 }
 
+//Resume button clicked
 function resumeRun(){
 	drawStopRun();
 	setTimeout(function(){
