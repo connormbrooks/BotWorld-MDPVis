@@ -7,6 +7,7 @@ function endRun(tile, score){
 	document.getElementById("TopInfoPanel").innerHTML="Final score: "+score+"<br/><button onclick='run()'>Run Again</button>";
 	setTimeout(function(){
 		document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "0%";
+		clearBottomInfo();
 	}, 700);
 }
 function endPOMDPRun(tile, score, agnt){
@@ -22,6 +23,7 @@ function endPOMDPRun(tile, score, agnt){
 	setTimeout(function(){
 		document.getElementById(tile[0]+":"+tile[1]).style["border-radius"] = "0%";
 		clearBeliefs();
+		clearBottomInfo();
 	}, 700);
 }
 
@@ -244,7 +246,7 @@ function makeStartingTile(row, col){
 		board.startingTile[1] = col;
 		document.getElementById(row+":"+col+"status").innerHTML = "START";
 
-		document.getElementById("BottomInfoPanel").innerHTML = "";
+		clearOptions();
 	}
 	addPolicyButton();
 }
@@ -270,7 +272,7 @@ function toggleEndingTile(row, col, override = false){
 			}
 		}
 
-		document.getElementById("BottomInfoPanel").innerHTML = "";
+		clearOptions();
 	}
 	addPolicyButton();
 }
@@ -282,7 +284,7 @@ function makeAccessible(row, col){
 		document.getElementById(row+":"+col).style["background-color"] = "white";
 		addPolicyButton();
 	}
-	document.getElementById("BottomInfoPanel").innerHTML = "";
+	clearOptions();
 }
 
 function makeInaccessible(row, col){
@@ -296,7 +298,7 @@ function makeInaccessible(row, col){
 			document.getElementById(row+":"+col).style["background-color"] = "black";
 			addPolicyButton();
 		}
-		document.getElementById("BottomInfoPanel").innerHTML = "";
+		clearOptions();
 	}
 }
 
@@ -396,6 +398,7 @@ function setupPOMDP(){
 	+ " <button onclick='validatePOMDPInput(1)'>Run Most-Likely State</button>"
 	+ " <button onclick='validatePOMDPInput(2)'>Run Q-MDP</button>";
 	document.getElementById("TopInfoPanel").innerHTML = str;
+	clearOptions();
 	board.gradient.setSpectrum("blue", "red");
 	board.gradient.setNumberRange(0,1000);
 }
@@ -425,6 +428,37 @@ function clearBeliefs(){
 	for(var i = 0; i < states.length; i++){
 		document.getElementById(states[i].row+":"+states[i].col).style["background-color"] = "white";
 	}
+}
+
+function clearOptions(){
+	document.getElementById("BottomInfoPanel").innerHTML = "";
+}
+
+function clearBottomInfo(){
+	document.getElementById("InfoDump").innerHTML = "";
+}
+
+function drawAttemptedMove(move){
+	document.getElementById("InfoDump").innerHTML = "Last Attempted Move: "+move +"<br/>";
+}
+
+function drawPOMDPData(agnt, sense){
+	var str = "Agent's Sensory Input: <br/>"
+	+ "&nbsp;Left: "+sense["L"]+"<br/>"
+	+ "&nbsp;Up: "+sense["U"]+"<br/>"
+	+ "&nbsp;Right: "+sense["R"]+"<br/>"
+	+ "&nbsp;Down: "+sense["D"]+"<br/>";
+	document.getElementById("InfoDump").innerHTML += str;
+}
+
+function drawTileData(state){
+	var str = "Tile: ("+state.row+","+state.col+")<br/>"
+	+ "Ending tile: "+state.endingTile+"<br/>"
+	+ "Score: "+state.score+"<br/>"
+	+ "Probability of Successful Move: "+state.probability+"<br/>"
+	+ "Calculated Utility: "+state.utility+"<br/>"
+	+ "Calculated Policy: "+state.policy+"<br/>";
+	document.getElementById("InfoDump").innerHTML = str;
 }
 
 //HTML MODIFIERS*********************************************************************

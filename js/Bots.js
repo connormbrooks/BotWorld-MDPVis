@@ -16,6 +16,7 @@ function boardClick(div){
 	var col = parseInt(divId.split(":")[1]);
 	var el = board.getElement(row,col);
 	displayOptions(el);
+	drawTileData(el);
 }
 
 function policy(){
@@ -66,6 +67,7 @@ function iterate(s, util_prime, count){
 }
 
 function setPolicy(util){
+	clearOptions();
 	var keys = Object.keys(util);
 	for(var i = 0; i < keys.length; i++){
 		var state = board.getElementById(keys[i]);
@@ -89,6 +91,7 @@ function setPolicy(util){
 }
 
 function run(agnt = null, mode = 0){
+	clearOptions();
 	setCurrentState(board.startingTile,null);
 	if(mode > 0 && agnt != null){
 		startingBeliefs(agnt);
@@ -155,6 +158,7 @@ function getNextState(tile, score, agnt, mode){
 
 	//make move
 	setCurrentState(newTile,tile);
+	drawAttemptedMove(arrayToDirection(optimum));
 
 	//if POMDP, update belief state
 	if(mode > 0){
@@ -163,6 +167,7 @@ function getNextState(tile, score, agnt, mode){
 		forwardBeliefs(agnt, optimum, sense);
 		//draw new beliefs
 		drawBeliefs(agnt);
+		drawPOMDPData(agnt, sense);
 	}
 
 	if(HALT){

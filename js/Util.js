@@ -97,13 +97,13 @@ function directionToArray(str){
 }
 
 function arrayToDirection(arr){
-	if(arr == [-1, 0]){
+	if(arr[0] == -1 && arr[1] == 0){
 		return "U";
-	} else if (arr == [0, 1]){
+	} else if (arr[0] == 0 && arr[1] == 1){
 		return "R";
-	} else if (arr == [1, 0]){
+	} else if (arr[0] == 1 && arr[1] == 0){
 		return "D";
-	} else if (arr == [0, -1]){
+	} else if (arr[0] == 0 && arr[1] == -1){
 		return "L";
 	} else {
 		alert("Unrecognized direction encountered");
