@@ -30,32 +30,33 @@ Data on states/agent printing below the board
 DETAILS
 
 BotWorld sets up an environment that is a Markov Decision Process, and the solution to an MDP can be found by using the Bellman equation:
-U(s) = R(s) + 𝛾 maxa ∑s’ [ P(s’ | s, a) * U(s’) ] , ∀ a ∈ A(s) 
+
+U(s) = R(s) + 𝛾 max<sub>a</sub> ∑<sub>s’</sub> [ P(s’ | s, a) * U(s’) ] , ∀ a ∈ A(s) 
 
 
 to calculate the utility of each move. The utility is found through using the value-iteration algorithm. For this value-iteration, the user provided gamma is used as the discount rate on future moves and the user provided threshold value determines how long to keep iterating. Once the change is less than the threshold value, it stops. 
 
 
-U’(s) = R(s) + 𝛾 maxa ∑s’ P(s’ | s,a) *U(s’)
+U’(s) = R(s) + 𝛾 max<sub>a</sub> ∑<sub>s’</sub> P(s’ | s,a) *U(s’)
 ẟ = maxs | U’(s) - U(s) |
 Quit once ẟ < THRESHOLD*(1-𝛾 )/𝛾 
 
 
 BotWorld also sets up Partially Observable Markov Decision Processes. In POMDPs, the agent isn’t always certain which state it is currently in, but instead has beliefs about the state it is currently in. However, this comes with some issues with the sensors being noisy, or not always accurately reporting. Thus, the agent must maintain a belief state that represents how likely the agent believe it is that it is in any given state. If the agent knows the starting position, it starts with a belief of 1 in that position and 0 in all other positions. Otherwise, it evenly distributes the belief between all positions. To update the agent’s belief state, b, after an action, a, is taken (note this action is what the agent ATTEMPTED, the agent does not know if it was successful or not) and sensory input, e, is received, we used the following algorithm:
-b’(s’) = 𝛂 P(e | s’) ∑s [P(s’ | s, a) * b(s)]
-Where   𝛂 = 1/[∑s’ (P(e | s’) ∑s [P(s’ | s, a) * b(s)])]
+b’(s’) = 𝛂 P(e | s’) ∑<sub>s</sub> [P(s’ | s, a) * b(s)]
+Where   𝛂 = 1/[∑<sub>s’</sub> (P(e | s’) ∑<sub>s</sub> [P(s’ | s, a) * b(s)])]
 
 
 Solving a POMDP can be reduced to solving a MDP over the belief states. However, there is a significant issue with this - the belief states are continuous, and exact solutions to a POMDP using this process are intractable. Instead, several methods have been developed to approximate the solutions to POMDPs. For our project, we use “greedy” approaches which rely on the underlying MDP. We implement two heuristics: the Most-Likely State policy, and the Q-MDP policy. 
 The “Most-Likely State” (MLS) heuristic policy is found by: 
 
 
-𝝅POMDP(s) = 𝝅MDP(maxs b(s))
+𝝅<sub>POMDP</sub>(s) = 𝝅<sub>MDP</sub>(max<sub>s</sub> b(s))
 
 
 The Q-MDP policy is found by:
 
 
-𝝅POMDP(s) = maxa(∑s b(s)*Q(s,a))
-Where	    Q(s,a) = ∑s’ (P(s’ | s, a) * (R(s, a, s’) * 𝛾*U(s’)))
+𝝅<sub>POMDP</sub>(s) = max<sub>a</sub>(∑<sub>s</sub> b(s)*Q(s,a))
+Where	    Q(s,a) = ∑<sub>s’</sub> (P(s’ | s, a) * (R(s, a, s’) * 𝛾*U(s’)))
 
