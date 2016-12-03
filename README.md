@@ -8,28 +8,44 @@ BotWorld is a Markov Decision Process Visualizer tool built to help users better
 
 FEATURES
 
-User can enter their world as a text file
-User can select of starting state
-User can specify multiple ending states
-User can create inaccessible states
-User can specify the reward/cost of a state
-User can specify the probability of successful movement while in a state
-User can specify threshold and gamma for policy finding
-Finds a policy for the given board
-After finding a policy, executes the policy and displays final “score” during simulation
-User can specify agent sensor characteristics for POMDPs
-User can specify whether or not agent knows starting location for POMDPs
-Simulation of running through partially observable environment with belief updating
-Current belief state visualized through “heat-map” while simulation runs
-POMDP solution approximation using most likely state for policy determination
-POMDP solution approximation using Q-MDP for policy determination
-User can pause and resume the agent moving through the policy
-Data on states/agent printing below the board
+-User can enter their world as a text file
+
+-User can select of starting state
+
+-User can specify multiple ending states
+
+-User can create inaccessible states
+
+-User can specify the reward/cost of a state
+
+-User can specify the probability of successful movement while in a state
+
+-User can specify threshold and gamma for policy finding
+
+-Finds a policy for the given board
+
+-After finding a policy, executes the policy and displays final “score” during simulation
+
+-User can specify agent sensor characteristics for POMDPs
+
+-User can specify whether or not agent knows starting location for POMDPs
+
+-Simulation of running through partially observable environment with belief updating
+
+-Current belief state visualized through “heat-map” while simulation runs
+
+-POMDP solution approximation using most likely state for policy determination
+
+-POMDP solution approximation using Q-MDP for policy determination
+
+-User can pause and resume the agent moving through the policy
+
+-Data on states/agent printing below the board
 
 
 DETAILS
 
-BotWorld sets up an environment that is a Markov Decision Process, and the solution to an MDP can be found by using the Bellman equation:
+BotWorld sets up an environment that represents a Markov Decision Process, and the solution to an MDP can be found by using the Bellman equation:
 
 U(s) = R(s) + 𝛾 max<sub>a</sub> ∑<sub>s’</sub> [ P(s’ | s, a) * U(s’) ] , ∀ a ∈ A(s) 
 
